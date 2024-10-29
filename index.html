@@ -3,102 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treasure Click</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- Menambahkan Web3.js dari CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <title>Treasure Click - GCO</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.55/dist/web3.min.js"></script>
+    <script src="script.js" defer></script>
 </head>
 <body>
     <div class="container">
         <h1>Treasure Click</h1>
-        <input type="text" id="address-input" placeholder="Enter your wallet address">
-        <button id="login-button">Login</button>
-        <button id="distribute-button">Distribute Treasure</button>
-        <div id="result"></div>
+        <p>Collect rewards daily and earn big treasures!</p>
+        
+        <!-- Wallet Connection -->
+        <button id="connectWallet" class="btn">Connect Wallet</button>
+        <p id="walletAddress" class="wallet-info"></p>
+
+        <!-- Daily Login Reward -->
+        <div class="card">
+            <h2>Daily Login</h2>
+            <p>Earn daily rewards by logging in.</p>
+            <button id="loginDaily" class="btn">Claim Daily Reward</button>
+            <p id="loginStatus" class="status"></p>
+        </div>
+
+        <!-- Treasure Distribution -->
+        <div class="card">
+            <h2>Treasure Rewards</h2>
+            <p>Choose a treasure to claim!</p>
+            <button onclick="claimTreasure(true)" class="btn small">Small Treasure</button>
+            <button onclick="claimTreasure(false)" class="btn big">Big Treasure</button>
+            <p id="treasureStatus" class="status"></p>
+        </div>
     </div>
-    
-    <script>
-        // Mendapatkan elemen dari DOM
-        const loginButton = document.getElementById('login-button');
-        const distributeButton = document.getElementById('distribute-button');
-        const addressInput = document.getElementById('address-input');
-        const resultDiv = document.getElementById('result');
-
-        // Inisialisasi Web3
-        let web3;
-        if (window.ethereum) {
-            web3 = new Web3(window.ethereum);
-            window.ethereum.enable(); // Meminta akses ke akun Ethereum
-        } else {
-            alert('Please install MetaMask!');
-        }
-
-        // Konfigurasi Smart Contract
-        const contractAddress = '0x6eB41F55b918b41f8271C5AfB9b96cA6A46e81bf'; // Alamat smart contract
-        const contractABI = [
-            // Ganti dengan ABI smart contract
-            {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"rewardAmount","type":"uint256"}],"name":"RewardClaimed","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
-            {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"rewardAmount","type":"uint256"}],"name":"TreasureDistributed","type":"event"},
-            {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"bigTreasureReward","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"dailyLoginReward","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"bool","name":"isSmall","type":"bool"}],"name":"distributeTreasure","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"hasClaimedDailyReward","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasLoggedInToday","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastLoginTimestamp","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"loginDaily","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[],"name":"maxTreasure","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"rewardPool","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"smallTreasureReward","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[],"name":"totalTreasureDistributed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
-            {"inputs":[{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
-            {"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
-        ];
-
-        const treasureClickContract = new web3.eth.Contract(contractABI, contractAddress);
-
-        // Event listener untuk tombol login
-        loginButton.addEventListener('click', async () => {
-            const address = addressInput.value;
-            if (address) {
-                try {
-                    const accounts = await web3.eth.getAccounts();
-                    await treasureClickContract.methods.loginDaily().send({ from: accounts[0] });
-                    resultDiv.innerHTML = `Login successful for address: ${address}`;
-                } catch (error) {
-                    console.error(error);
-                    resultDiv.innerHTML = 'Error logging in. Please check the console for details.';
-                }
-            } else {
-                alert('Please enter your wallet address');
-            }
-        });
-
-        // Event listener untuk tombol distribusi
-        distributeButton.addEventListener('click', async () => {
-            const address = addressInput.value;
-            if (address) {
-                try {
-                    const accounts = await web3.eth.getAccounts();
-                    await treasureClickContract.methods.distributeTreasure(true).send({ from: accounts[0] }); // Misalnya distribusi small treasure
-                    resultDiv.innerHTML = `Distributing treasure to: ${address}`;
-                } catch (error) {
-                    console.error(error);
-                    resultDiv.innerHTML = 'Error distributing treasure. Please check the console for details.';
-                }
-            } else {
-                alert('Please enter your wallet address');
-            }
-        });
-    </script>
 </body>
 </html>
