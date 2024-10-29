@@ -1,56 +1,56 @@
-const contractAddress = '0x6eB41F55b918b41f8271C5AfB9b96cA6A46e81bf';
-const contractABI = /* ABI Array from previous data */;
-let web3;
-let contract;
-let userAccount;
+// Inisialisasi Web3
+if (typeof window.ethereum !== 'undefined') {
+    const web3 = new Web3(window.ethereum);
 
-window.addEventListener('load', async () => {
-    if (typeof window.ethereum !== 'undefined') {
-        web3 = new Web3(window.ethereum);
+    // ABI dari smart contract
+    const abi = [
+        // Masukkan ABI di sini
+        {"inputs":[],"stateMutability":"nonpayable","type":"constructor"},
+        {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},
+        {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"rewardAmount","type":"uint256"}],"name":"RewardClaimed","type":"event"},
+        {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
+        {"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"rewardAmount","type":"uint256"}],"name":"TreasureDistributed","type":"event"},
+        {"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"bigTreasureReward","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"dailyLoginReward","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"bool","name":"isSmall","type":"bool"}],"name":"distributeTreasure","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"hasClaimedDailyReward","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasLoggedInToday","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"lastLoginTimestamp","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"loginDaily","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[],"name":"maxTreasure","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"rewardPool","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"smallTreasureReward","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[],"name":"totalTreasureDistributed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},
+        {"inputs":[{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},
+        {"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"address","name":"recipient","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"}
+    ];
+
+    // Alamat smart contract
+    const contractAddress = '0x6eB41F55b918b41f8271C5AfB9b96cA6A46e81bf';
+    
+    // Inisialisasi kontrak
+    const contract = new web3.eth.Contract(abi, contractAddress);
+
+    // Menambahkan event listener untuk tombol login
+    document.getElementById("loginButton").addEventListener("click", async () => {
         try {
-            await ethereum.request({ method: 'eth_requestAccounts' });
-            document.getElementById('connectWallet').onclick = connectWallet;
-            contract = new web3.eth.Contract(contractABI, contractAddress);
+            await window.ethereum.request({ method: 'eth_requestAccounts' });
+            const accounts = await web3.eth.getAccounts();
+            document.getElementById("status").innerText = `Logged in as: ${accounts[0]}`;
         } catch (error) {
-            console.error("User denied account access.");
-        }
-    } else {
-        alert("Please install a Web3 wallet such as MetaMask or Trust Wallet.");
-    }
-});
-
-async function connectWallet() {
-    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-    userAccount = accounts[0];
-    document.getElementById('walletAddress').innerText = `Connected: ${userAccount}`;
-}
-
-async function claimDailyReward() {
-    if (userAccount) {
-        try {
-            await contract.methods.loginDaily().send({ from: userAccount });
-            document.getElementById('loginStatus').innerText = "Daily reward claimed!";
-        } catch (error) {
-            document.getElementById('loginStatus').innerText = "Failed to claim reward.";
+            document.getElementById("status").innerText = "Connection denied!";
             console.error(error);
         }
-    } else {
-        alert("Please connect your wallet.");
-    }
-}
+    });
 
-async function claimTreasure(isSmall) {
-    if (userAccount) {
-        try {
-            await contract.methods.distributeTreasure(isSmall).send({ from: userAccount });
-            document.getElementById('treasureStatus').innerText = isSmall ? "Small treasure claimed!" : "Big treasure claimed!";
-        } catch (error) {
-            document.getElementById('treasureStatus').innerText = "Failed to claim treasure.";
-            console.error(error);
-        }
-    } else {
-        alert("Please connect your wallet.");
-    }
+    // Tambah lebih banyak fungsi di sini jika diperlukan
+} else {
+    document.getElementById("status").innerText = "Please install MetaMask!";
 }
-
-document.getElementById('loginDaily').addEventListener('click', claimDailyReward);
